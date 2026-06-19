@@ -24,7 +24,7 @@ module.exports = async function handler(req, res) {
     // Mapeo del historial al formato oficial de Google Gemini (user / model)
     const contents = chatHistory.map(msg => ({
       role: msg.role === 'assistant' ? 'model' : 'user',
-      parts: [{ text: msg.content }]
+      parts: [{ text: msg.content }]Demo · Asistente Virtual WhatsApp con IA · Adaptable a cualquier negocio · Sunhaus & Co ©2026
     }));
 
     // URL oficial para gemini-3.1-flash-lite usando la API v1beta
