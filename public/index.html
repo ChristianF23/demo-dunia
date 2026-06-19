@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Demo DunIA — Asistente Virtual para WhatsApp con IA</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --color-bg:#f7f7f5;--color-surface:#ffffff;--color-surface2:#f1efea;
+  --color-border:#e5e3de;--color-border2:#d0cec8;
+  --color-text:#1a1a18;--color-text2:#6b6b66;--color-text3:#9b9b96;
+  --color-green:#1D9E75;--color-green-light:#E1F5EE;--color-green-dark:#085041;
+  --radius-md:8px;--radius-lg:12px;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--color-bg);color:var(--color-text);min-height:100vh}
+svg.icon{display:inline-block;vertical-align:middle;flex-shrink:0}
+.page-header{background:var(--color-surface);border-bottom:0.5px solid var(--color-border);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.logo{display:flex;align-items:center;gap:10px}
+.logo-icon{width:32px;height:32px;background:#25D366;border-radius:8px;display:flex;align-items:center;justify-content:center}
+.logo-text{font-size:15px;font-weight:500}
+.logo-sub{font-size:11px;color:var(--color-text2);margin-top:1px}
+.header-badge{font-size:11px;background:var(--color-green-light);color:var(--color-green-dark);padding:4px 10px;border-radius:20px;font-weight:500}
+.container{max-width:820px;margin:0 auto;padding:24px 16px}
+.sector-bar{display:flex;align-items:center;gap:8px;margin-bottom:1.25rem;flex-wrap:wrap}
+.sector-label{font-size:12px;color:var(--color-text2);margin-right:4px}
+.sector-btn{padding:6px 14px;font-size:12px;border:0.5px solid var(--color-border2);border-radius:20px;cursor:pointer;background:var(--color-surface);color:var(--color-text2);transition:all 0.15s;font-family:inherit}
+.sector-btn.active{background:var(--color-green);color:#fff;border-color:var(--color-green)}
+.sector-btn:hover:not(.active){border-color:var(--color-green);color:var(--color-green)}
+.tabs{display:flex;border-bottom:0.5px solid var(--color-border);background:var(--color-surface);border-radius:var(--radius-lg) var(--radius-lg) 0 0;overflow:hidden}
+.tab{padding:11px 18px;font-size:13px;cursor:pointer;border:none;background:transparent;color:var(--color-text2);border-bottom:2px solid transparent;margin-bottom:-1px;transition:all 0.15s;font-family:inherit;display:flex;align-items:center;gap:7px}
+.tab.active{color:var(--color-text);border-bottom:2px solid var(--color-green)}
+.tab:hover:not(.active){color:var(--color-text);background:var(--color-surface2)}
+.tab-content{display:none}.tab-content.active{display:block}
+/* PHONE */
+.phone-wrap{background:var(--color-surface2);border-radius:var(--radius-lg);padding:1.5rem;display:flex;justify-content:center;align-items:flex-start;gap:1.5rem;flex-wrap:wrap}
+.phone{width:310px;background:#fff;border-radius:24px;border:1px solid var(--color-border);overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.10);flex-shrink:0}
+.phone-header{background:#075E54;padding:12px 14px;display:flex;align-items:center;gap:10px}
+.phone-avatar{width:36px;height:36px;border-radius:50%;background:#25D366;display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff;font-weight:600;flex-shrink:0}
+.phone-info p{color:#fff;font-size:13px;font-weight:500;margin:0}
+.phone-info span{color:#b2dfdb;font-size:10px}
+.chat-area{background:#ECE5DD;padding:10px;min-height:380px;max-height:380px;overflow-y:auto;display:flex;flex-direction:column;gap:7px}
+.msg{max-width:83%;padding:7px 11px;border-radius:10px;font-size:12px;line-height:1.6;word-break:break-word}
+.msg-bot{background:#fff;align-self:flex-start;border-radius:2px 10px 10px 10px;color:#333;box-shadow:0 1px 2px rgba(0,0,0,0.08)}
+.msg-user{background:#DCF8C6;align-self:flex-end;border-radius:10px 2px 10px 10px;color:#333;box-shadow:0 1px 2px rgba(0,0,0,0.08)}
+.msg-time{font-size:9px;color:#999;text-align:right;margin-top:3px}
+.msg-ai-badge{display:inline-block;font-size:8px;background:#e8f5e9;color:#2e7d32;padding:1px 5px;border-radius:6px;margin-bottom:3px;font-weight:500}
+.quick-replies{padding:8px;background:#f0f0f0;display:flex;gap:5px;flex-wrap:wrap;border-top:0.5px solid #ddd}
+.qr-btn{padding:5px 9px;background:#fff;border:1px solid #25D366;border-radius:16px;font-size:11px;color:#128C7E;cursor:pointer;font-family:inherit}
+.qr-btn:hover{background:#25D366;color:#fff}
+.typing{display:flex;align-items:center;gap:4px;padding:8px 11px;background:#fff;border-radius:10px;align-self:flex-start;box-shadow:0 1px 2px rgba(0,0,0,0.08)}
+.typing-label{font-size:10px;color:#999;margin-right:2px}
+.dot{width:6px;height:6px;border-radius:50%;background:#aaa;animation:bounce 1.2s infinite}
+.dot:nth-child(2){animation-delay:0.2s}.dot:nth-child(3){animation-delay:0.4s}
+@keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
+.input-area{padding:8px;background:#f0f0f0;display:flex;gap:6px;align-items:center;border-top:0.5px solid #ddd}
+.msg-input{flex:1;padding:7px 12px;border-radius:20px;border:none;font-size:12px;outline:none;background:#fff;font-family:inherit}
+.send-btn{width:34px;height:34px;border-radius:50%;background:#25D366;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.send-btn:disabled{background:#aaa;cursor:not-allowed}
+.ai-indicator{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--color-text2);padding:7px 12px;background:var(--color-green-light);border-radius:8px;margin-bottom:12px}
+.ai-dot{width:7px;height:7px;border-radius:50%;background:var(--color-green);animation:pulse 2s infinite;flex-shrink:0}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+/* FLOW PANEL */
+.flow-panel{flex:1;min-width:190px;max-width:220px}
+.flow-panel-title{font-size:11px;font-weight:500;color:var(--color-text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px}
+.flow-step{display:flex;align-items:flex-start;gap:8px;margin-bottom:10px}
+.flow-num{width:22px;height:22px;border-radius:50%;background:var(--color-green);color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;flex-shrink:0;margin-top:1px}
+.flow-text p{font-size:12px;font-weight:500;margin:0 0 1px}
+.flow-text span{font-size:11px;color:var(--color-text2);line-height:1.4;display:block}
+/* DASHBOARD */
+.dash-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:1.25rem}
+.metric{background:var(--color-surface2);border-radius:var(--radius-md);padding:14px}
+.metric-label{font-size:11px;color:var(--color-text2);margin-bottom:4px}
+.metric-val{font-size:26px;font-weight:500}
+.metric-sub{font-size:11px;color:var(--color-green);margin-top:3px}
+.chart-card{background:var(--color-surface);border:0.5px solid var(--color-border);border-radius:var(--radius-lg);padding:16px;margin-bottom:14px}
+.chart-title{font-size:13px;font-weight:500;margin-bottom:14px}
+.bar-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.bar-label{font-size:11px;color:var(--color-text2);width:140px;flex-shrink:0;text-align:right}
+.bar-track{flex:1;background:var(--color-surface2);border-radius:4px;height:14px;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px;background:var(--color-green);transition:width 0.6s ease}
+.bar-pct{font-size:11px;color:var(--color-text2);width:32px}
+.funnel-row{display:flex;align-items:center;gap:10px;margin-bottom:9px}
+.funnel-label{font-size:11px;color:var(--color-text2);width:160px;flex-shrink:0}
+.funnel-bar{height:24px;border-radius:4px;display:flex;align-items:center;padding:0 10px;font-size:11px;color:#fff;font-weight:500;min-width:30px;transition:width 0.6s}
+.clients-table{width:100%;border-collapse:collapse;font-size:12px}
+.clients-table th{text-align:left;padding:8px 10px;color:var(--color-text2);font-weight:400;border-bottom:0.5px solid var(--color-border)}
+.clients-table td{padding:8px 10px;border-bottom:0.5px solid var(--color-border)}
+.badge{display:inline-block;padding:3px 8px;border-radius:10px;font-size:10px;font-weight:500}
+.badge-green{background:#E1F5EE;color:#085041}
+.badge-amber{background:#FAEEDA;color:#854F0B}
+.badge-blue{background:#E6F1FB;color:#185FA5}
+.badge-gray{background:#F1EFE8;color:#5F5E5A}
+/* ABOUT */
+.about-card{background:var(--color-surface);border:0.5px solid var(--color-border);border-radius:var(--radius-lg);padding:1.25rem;margin-bottom:1rem}
+.about-header{display:flex;align-items:center;gap:12px;margin-bottom:1rem;padding-bottom:1rem;border-bottom:0.5px solid var(--color-border)}
+.about-avatar{width:48px;height:48px;border-radius:50%;background:var(--color-green-light);display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:600;color:var(--color-green-dark);flex-shrink:0}
+.about-name{font-size:15px;font-weight:500;margin-bottom:2px}
+.about-role{font-size:12px;color:var(--color-text2)}
+.services-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:10px}
+.service-card{border:0.5px solid var(--color-border);border-radius:var(--radius-md);padding:10px 12px;background:var(--color-surface2)}
+.service-name{font-size:12px;font-weight:500;margin-bottom:2px}
+.service-price{font-size:11px;color:var(--color-green);font-weight:500}
+.service-desc{font-size:11px;color:var(--color-text2);margin-top:3px;line-height:1.4}
+.tip-box{background:var(--color-green-light);border-radius:var(--radius-md);padding:12px 16px;margin-top:14px;border-left:3px solid var(--color-green)}
+.tip-box p{font-size:12px;color:#085041;line-height:1.6}
+.step-row{display:flex;align-items:flex-start;gap:12px;margin-bottom:14px}
+.step-num{width:28px;height:28px;border-radius:50%;background:var(--color-green);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0}
+.step-text p{font-size:13px;font-weight:500;margin:0 0 3px}
+.step-text span{font-size:12px;color:var(--color-text2);line-height:1.5;display:block}
+.page-footer{text-align:center;padding:24px;font-size:11px;color:var(--color-text3);border-top:0.5px solid var(--color-border);margin-top:2rem}
+</style>
+</head>
+<body>
+
+<!-- SVG ICON DEFS (inline, no CDN needed) -->
+<svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+  <symbol id="ico-wa" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M3 21l1.65-3.8a9 9 0 1 1 3.4 2.9L3 21"/>
+    <path d="M9 10c0 .6.4 1 1 1h.01"/>
+    <path d="M14 10c0 .6.4 1 1 1h.01"/>
+    <path d="M9.5 14.5s1 1.5 2.5 1.5 2.5-1.5 2.5-1.5"/>
+  </symbol>
+  <symbol id="ico-chart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="3" y="12" width="4" height="8" rx="1"/>
+    <rect x="9" y="8" width="4" height="12" rx="1"/>
+    <rect x="15" y="4" width="4" height="16" rx="1"/>
+  </symbol>
+  <symbol id="ico-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="9"/>
+    <line x1="12" y1="8" x2="12" y2="8.01"/>
+    <polyline points="11 12 12 12 12 16 13 16"/>
+  </symbol>
+  <symbol id="ico-send" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <line x1="22" y1="2" x2="11" y2="13"/>
+    <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+  </symbol>
+</svg>
+
+<div class="page-header">
+  <div class="logo">
+    <div class="logo-icon">
+      <svg class="icon" width="18" height="18" style="color:#fff"><use href="#ico-wa"/></svg>
+    </div>
+    <div>
+      <div class="logo-text">Asistente DunIA WhatsApp</div>
+      <div class="logo-sub">Sunhaus & Co · Demo interactivo</div>
+    </div>
+  </div>
+  <span class="header-badge">✦ IA en vivo</span>
+</div>
+
+<div class="container">
+  <div class="sector-bar">
+    <span class="sector-label">Tipo de negocio:</span>
+    <button class="sector-btn active" onclick="setSector('psico',this)">🧠 Psicología</button>
+    <button class="sector-btn" onclick="setSector('estetica',this)">💆 Clínica estética</button>
+    <button class="sector-btn" onclick="setSector('medico',this)">🩺 Médico general</button>
+    <button class="sector-btn" onclick="setSector('empresa',this)">💼 Empresa</button>
+  </div>
+
+  <div style="background:var(--color-surface);border-radius:var(--radius-lg);border:0.5px solid var(--color-border);overflow:hidden">
+    <div class="tabs">
+      <button class="tab active" onclick="setTab('chat',this)">
+        <svg class="icon" width="16" height="16"><use href="#ico-wa"/></svg> Chatbot con IA
+      </button>
+      <button class="tab" onclick="setTab('dash',this)">
+        <svg class="icon" width="16" height="16"><use href="#ico-chart"/></svg> Reporte
+      </button>
+      <button class="tab" onclick="setTab('about',this)">
+        <svg class="icon" width="16" height="16"><use href="#ico-info"/></svg> Cómo funciona
+      </button>
+    </div>
+
+    <div style="padding:1.25rem">
+
+      <!-- TAB CHAT -->
+      <div id="tab-chat" class="tab-content active">
+        <div class="ai-indicator">
+          <div class="ai-dot"></div>
+          <span>Respondiendo con IA real — escribe cualquier cosa, en tus propias palabras</span>
+        </div>
+        <div class="phone-wrap">
+          <div class="phone">
+            <div class="phone-header">
+              <div class="phone-avatar" id="avatarInitials">DL</div>
+              <div class="phone-info">
+                <p id="botName">Dra. Luz — Psicología</p>
+                <span id="botStatus">en línea · Asistente con IA</span>
+              </div>
+            </div>
+            <div class="chat-area" id="chatArea"></div>
+            <div class="quick-replies" id="quickReplies"></div>
+            <div class="input-area">
+              <input class="msg-input" id="userInput" placeholder="Escribe tu consulta..." onkeydown="if(event.key==='Enter')sendUserMsg()"/>
+              <button class="send-btn" id="sendBtn" onclick="sendUserMsg()">
+                <svg class="icon" width="15" height="15" style="color:#fff"><use href="#ico-send"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="flow-panel">
+            <div class="flow-panel-title">Flujo optimizado</div>
+            <div class="flow-step"><div class="flow-num">1</div><div class="flow-text"><p>IA responde 24/7</p><span>Lenguaje natural, empático y personalizado al negocio</span></div></div>
+            <div class="flow-step"><div class="flow-num">2</div><div class="flow-text"><p>Detecta intención</p><span>Entiende si quieren info, agendar, o hablar con alguien</span></div></div>
+            <div class="flow-step"><div class="flow-num">3</div><div class="flow-text"><p>Pago + formulario</p><span>El cliente paga y llena datos sin intervención humana</span></div></div>
+            <div class="flow-step"><div class="flow-num" style="background:#085041">4</div><div class="flow-text"><p>Asesor solo ve listos</p><span>Notificación solo cuando el pago está confirmado</span></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB DASHBOARD -->
+      <div id="tab-dash" class="tab-content">
+        <div class="dash-grid">
+          <div class="metric"><div class="metric-label">Conversaciones este mes</div><div class="metric-val" id="m1">148</div><div class="metric-sub" id="m1s">↑ 23% vs mes anterior</div></div>
+          <div class="metric"><div class="metric-label">Tasa de conversión</div><div class="metric-val" id="m2">34%</div><div class="metric-sub" id="m2s">50 pagos completados</div></div>
+          <div class="metric"><div class="metric-label">Tiempo de respuesta</div><div class="metric-val">2s</div><div class="metric-sub">Respuesta inmediata IA</div></div>
+          <div class="metric"><div class="metric-label">Leads calificados</div><div class="metric-val" id="m3">43</div><div class="metric-sub" id="m3s">Asesor solo ve listos</div></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Servicios más solicitados</div>
+          <div id="barChart"></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Embudo de conversión</div>
+          <div id="funnelChart"></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Últimos clientes registrados</div>
+          <div style="overflow-x:auto">
+            <table class="clients-table">
+              <thead><tr><th>Nombre</th><th>Servicio</th><th>Estado</th><th>Hora</th></tr></thead>
+              <tbody id="clientsBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB ABOUT -->
+      <div id="tab-about" class="tab-content">
+        <div class="about-card">
+          <div class="about-header">
+            <div class="about-avatar" id="aboutAvatar">DL</div>
+            <div>
+              <div class="about-name" id="aboutName">Dra. Luz García — Psicología Clínica</div>
+              <div class="about-role" id="aboutRole">Asistente entrenado con los servicios y tarifas del consultorio</div>
+            </div>
+          </div>
+          <div class="services-grid" id="servicesGrid"></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Flujo del bot — paso a paso</div>
+          <div class="step-row"><div class="step-num">1</div><div class="step-text"><p>IA responde en lenguaje natural</p><span>El asistente atiende 24/7 con respuestas empáticas y coherentes al perfil del negocio. No suena a robot.</span></div></div>
+          <div class="step-row"><div class="step-num">2</div><div class="step-text"><p>Detecta intención automáticamente</p><span>Entiende si el cliente quiere información, tiene dudas, o está listo para agendar — sin botones rígidos.</span></div></div>
+          <div class="step-row"><div class="step-num">3</div><div class="step-text"><p>Dirige al pago o formulario</p><span>Cuando el cliente está listo, el asistente explica el proceso de pago y el formulario de datos sin ayuda humana.</span></div></div>
+          <div class="step-row"><div class="step-num" style="background:#0F6E56">4</div><div class="step-text"><p>Notificación al asesor (solo calificados)</p><span>El asesor recibe un WhatsApp únicamente cuando el pago está confirmado. Sin leads fríos ni saturación.</span></div></div>
+          <div class="step-row"><div class="step-num" style="background:#085041">5</div><div class="step-text"><p>Dashboard en tiempo real</p><span>Servicios pedidos, horarios pico, tasa de conversión y perfil del cliente quedan registrados automáticamente.</span></div></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="page-footer">Demo · Asistente Virtual WhatsApp con IA · Adaptable a cualquier negocio</div>
+
+<script>
+const SECTORS={
+  psico:{
+    name:"Psicología",botName:"Dra. Luz — Psicología",avatar:"DL",
+    aboutName:"Dra. Luz García — Psicología Clínica",
+    aboutRole:"Bot entrenado con los servicios y tarifas del consultorio",
+    status:"en línea · Asistente con IA",
+    welcomeMsg:"Hola 👋 Soy DunIA asistente virtual del consultorio de la *Dra. Luz García*, psicóloga clínica.\n\nPuedes escribirme con cualquier pregunta — estoy aquí para ayudarte 🌿",
+    quickStart:["¿Qué servicios ofrecen?","Quiero agendar una cita","¿Cuánto cuesta la primera sesión?","¿Cómo funciona la terapia virtual?"],
+    systemPrompt:`Eres el asistente virtual de WhatsApp del consultorio de la Dra. Luz García, psicóloga clínica con experiencia en ansiedad, depresión, relaciones de pareja y desarrollo personal.
+
+Tu tono es cálido, empático y profesional — como hablaría alguien que trabaja en salud mental. No suenas a robot ni a call center. Usas un lenguaje cercano pero respetuoso.
+
+SERVICIOS Y PRECIOS:
+- Valoración virtual (primera sesión): $80.000 COP — sesión de 60 min por videollamada, evaluación clínica inicial y plan de trabajo personalizado
+- Terapia individual: $120.000 COP por sesión de 50 min, disponible virtual o presencial
+- Terapia de pareja: $160.000 COP por sesión, enfocada en comunicación, conflictos y crisis
+- Psicología infantil: $110.000 COP, para niños de 4 a 12 años, conducta y emociones
+
+PROCESO PARA AGENDAR (virtual):
+1. El cliente transfiere $80.000 a Nequi/Daviplata al número 300 000 0000
+2. Guarda el comprobante de pago
+3. Completa el formulario en: forms.gle/ejemplo
+4. Un asesor confirma la cita en máximo 2 horas
+
+PROCESO PRESENCIAL:
+Las citas presenciales se coordinan con un asesor. Si alguien quiere presencial, diles que un asesor les escribirá para coordinar horario.
+
+REGLAS:
+- Nunca inventes información. Si no sabes algo, di que un asesor puede aclarar.
+- Si el cliente menciona una crisis emocional o autolesiones, responde con mucho cuidado y recomiéndale línea de crisis o médico.
+- Respuestas cortas, máximo 4-5 líneas. WhatsApp no es para textos largos.
+- Usa emojis con moderación (1-2 por mensaje máximo).
+- Si el cliente está listo para agendar, guíalo al proceso de pago de forma natural.
+- Termina con una pregunta suave para mantener la conversación.`,
+    services:[{name:"Valoración virtual",price:"$80.000 COP",desc:"Primera sesión de evaluación online"},{name:"Terapia individual",price:"$120.000/sesión",desc:"Sesiones 50 min, Zoom o presencial"},{name:"Terapia de pareja",price:"$160.000/sesión",desc:"Conflictos, comunicación, crisis"},{name:"Psicología infantil",price:"$110.000/sesión",desc:"Niños 4-12 años, conducta y emociones"}],
+    m1:"148",m2:"34%",m3:"43",m1s:"↑ 23% vs mes anterior",m2s:"50 pagos completados",m3s:"Asesor solo ve calificados",
+    bars:[{label:"Valoración virtual",pct:62},{label:"Terapia individual",pct:45},{label:"Ansiedad / estrés",pct:38},{label:"Terapia de pareja",pct:22},{label:"Psicología infantil",pct:18}],
+    clients:[{name:"Ana M.",svc:"Valoración virtual",estado:"Pagado",hora:"10:30am"},{name:"Carlos R.",svc:"Terapia individual",estado:"Agendado",hora:"8:15pm"},{name:"Lucía V.",svc:"Terapia de pareja",estado:"Pendiente",hora:"2:45pm"},{name:"Pedro G.",svc:"Valoración virtual",estado:"Pagado",hora:"11:00am"}],
+    flows:[{label:"Mensajes recibidos",n:148,c:"#1D9E75"},{label:"Interesados en servicio",n:89,c:"#0F6E56"},{label:"Solicitaron agendar",n:65,c:"#085041"},{label:"Completaron pago",n:50,c:"#04342C"}]
+  },
+  estetica:{
+    name:"Estética",botName:"Belleza & Skin",avatar:"BS",
+    aboutName:"Belleza & Skin — Clínica Estética",
+    aboutRole:"Bot entrenado con tratamientos y tarifas del centro",
+    status:"en línea · Asistente con IA",
+    welcomeMsg:"Hola ✨ Bienvenida a *Belleza & Skin*.\n\nSoy DunIA tu asistente virtual. Pregúntame lo que quieras sobre nuestros tratamientos 💆",
+    quickStart:["¿Qué tratamientos tienen?","Quiero agendar una valoración","¿Cuánto cuesta la limpieza facial?","¿Tienen promociones?"],
+    systemPrompt:`Eres el asistente virtual de WhatsApp de Belleza & Skin, clínica estética en Bogotá especializada en tratamientos faciales y corporales.
+
+Tu tono es amigable, cercano y entusiasta — como una amiga que sabe de estética. Sin sonar exagerado ni comercial.
+
+TRATAMIENTOS Y PRECIOS:
+- Valoración inicial: $60.000 COP — diagnóstico facial y corporal personalizado, sin compromiso
+- Limpieza facial profunda: $90.000 — exfoliación, extracción y hidratación, 60 min
+- Hilos tensores: $350.000 — rejuvenecimiento facial, requiere valoración previa
+- Reducción de medidas: $180.000/sesión — cavitación + radiofrecuencia
+
+PROCESO PARA AGENDAR:
+1. Transferir el valor al Nequi 311 000 0000 a nombre de Belleza & Skin
+2. Enviar comprobante al chat
+3. Llenar formulario en forms.gle/estetica
+4. Confirmamos en menos de 1 hora
+
+REGLAS:
+- Respuestas cortas. Máximo 4 líneas.
+- 1-2 emojis por mensaje.
+- Nunca garantices resultados específicos.
+- Para hilos tensores, siempre recomienda valoración primero.
+- Si están listos para agendar, guíalos al proceso de pago.`,
+    services:[{name:"Valoración inicial",price:"$60.000 COP",desc:"Diagnóstico facial y corporal"},{name:"Limpieza facial profunda",price:"$90.000",desc:"Exfoliación + extracción + hidratación"},{name:"Hilos tensores",price:"$350.000",desc:"Rejuvenecimiento facial"},{name:"Reducción de medidas",price:"$180.000",desc:"Cavitación + radiofrecuencia"}],
+    m1:"210",m2:"41%",m3:"61",m1s:"↑ 31% vs mes anterior",m2s:"86 pagos completados",m3s:"Flujo optimizado",
+    bars:[{label:"Limpieza facial",pct:70},{label:"Reducción medidas",pct:55},{label:"Valoración inicial",pct:48},{label:"Hilos tensores",pct:30},{label:"Peeling químico",pct:22}],
+    clients:[{name:"Sofía P.",svc:"Limpieza facial",estado:"Pagado",hora:"9:00am"},{name:"Diana L.",svc:"Hilos tensores",estado:"Agendado",hora:"3:00pm"},{name:"Mariana T.",svc:"Valoración",estado:"Pendiente",hora:"6:30pm"},{name:"Valentina R.",svc:"Reducción medidas",estado:"Pagado",hora:"11:30am"}],
+    flows:[{label:"Mensajes recibidos",n:210,c:"#1D9E75"},{label:"Interesados en servicio",n:130,c:"#0F6E56"},{label:"Solicitaron agendar",n:98,c:"#085041"},{label:"Completaron pago",n:86,c:"#04342C"}]
+  },
+  medico:{
+    name:"Médico",botName:"Dr. Ramírez — Medicina General",avatar:"DR",
+    aboutName:"Dr. Ramírez — Medicina General y Familiar",
+    aboutRole:"Bot entrenado con servicios del consultorio",
+    status:"en línea · Asistente con IA",
+    welcomeMsg:"Hola 🩺 Bienvenido al consultorio del *Dr. Ramírez*.\n\nPuedes escribirme tu consulta — te ayudo a encontrar el servicio que necesitas.",
+    quickStart:["¿Qué servicios ofrecen?","Quiero agendar una consulta","¿Hacen teleconsulta?","¿Cuánto cuesta la consulta?"],
+    systemPrompt:`Eres el asistente virtual de WhatsApp del consultorio del Dr. Ramírez, médico general y familiar en Bogotá.
+
+Tu tono es tranquilo, claro y profesional. Transmites confianza sin ser frío.
+
+SERVICIOS Y PRECIOS:
+- Consulta general: $60.000 COP — diagnóstico, formulación y recomendaciones
+- Control de enfermedades crónicas: $50.000 — hipertensión, diabetes, tiroides, etc.
+- Teleconsulta: $45.000 — videollamada de 30 min, formulación digital, seguimiento WhatsApp
+- Certificados médicos: $35.000 — laboral, escolar, deportivo
+
+PROCESO PARA AGENDAR:
+1. Transferir el valor a Nequi 302 000 0000
+2. Enviar comprobante
+3. Llenar formulario en forms.gle/medico
+4. Confirmamos en 2 horas
+
+REGLAS IMPORTANTES:
+- NUNCA des diagnósticos médicos ni recomiendes medicamentos.
+- Si alguien describe síntomas urgentes, indícales que vayan a urgencias inmediatamente.
+- Respuestas cortas, máximo 4 líneas. Máximo 1 emoji.
+- Si están listos para agendar, guíalos al proceso de pago.`,
+    services:[{name:"Consulta general",price:"$60.000 COP",desc:"Diagnóstico y formulación"},{name:"Control crónico",price:"$50.000",desc:"Hipertensión, diabetes, etc."},{name:"Certificados médicos",price:"$35.000",desc:"Laboral, escolar, deportivo"},{name:"Teleconsulta",price:"$45.000",desc:"Videollamada 30 min"}],
+    m1:"182",m2:"38%",m3:"52",m1s:"↑ 18% vs mes anterior",m2s:"69 consultas agendadas",m3s:"Flujo optimizado",
+    bars:[{label:"Consulta general",pct:65},{label:"Teleconsulta",pct:50},{label:"Control crónico",pct:40},{label:"Certificados",pct:35},{label:"Urgencias leves",pct:20}],
+    clients:[{name:"Jorge M.",svc:"Consulta general",estado:"Pagado",hora:"7:30am"},{name:"Rosa K.",svc:"Control crónico",estado:"Agendado",hora:"9:00am"},{name:"Andrés F.",svc:"Teleconsulta",estado:"Pagado",hora:"12:00pm"},{name:"Carmen Z.",svc:"Certificado",estado:"Pendiente",hora:"4:00pm"}],
+    flows:[{label:"Mensajes recibidos",n:182,c:"#1D9E75"},{label:"Interesados en servicio",n:110,c:"#0F6E56"},{label:"Solicitaron agendar",n:80,c:"#085041"},{label:"Completaron pago",n:69,c:"#04342C"}]
+  },
+  empresa:{
+    name:"Empresa",botName:"TechSoluciones — Comercial",avatar:"TS",
+    aboutName:"TechSoluciones — Servicios B2B",
+    aboutRole:"Bot entrenado con portafolio y procesos comerciales",
+    status:"en línea · Asistente comercial IA",
+    welcomeMsg:"Hola 👋 Bienvenido a *TechSoluciones*.\n\nSoy DunIA asistente del equipo comercial. ¿En qué puedo ayudarte hoy?",
+    quickStart:["¿Qué soluciones ofrecen?","Quiero una demo","¿Cuáles son los precios?","¿Tienen integración con otros sistemas?"],
+    systemPrompt:`Eres el asistente virtual de WhatsApp del equipo comercial de TechSoluciones, empresa de software B2B en Colombia.
+
+Tu tono es profesional, directo y orientado a resultados. Hablas de negocios sin ser rígido. Tu objetivo es entender la necesidad del prospecto y llevarlo a agendar una demo.
+
+PLANES Y PRECIOS:
+- Demo gratuita: 30 min con un experto, sin compromiso, muestra el producto en vivo
+- Plan Starter: $299.000/mes — hasta 5 usuarios, soporte básico por email
+- Plan Business: $799.000/mes — hasta 20 usuarios, soporte prioritario, integraciones avanzadas
+- Implementación personalizada: precio según alcance, requiere cotización
+
+PROCESO PARA AGENDAR DEMO:
+1. Llenar formulario en forms.gle/demo (nombre, empresa, cargo, teléfono)
+2. Un asesor confirma horario en máximo 2 horas hábiles
+
+REGLAS:
+- Respuestas cortas. Máximo 4 líneas. Máximo 1 emoji.
+- Nunca compares con competidores.
+- Si preguntan por integraciones específicas, di que un asesor técnico lo confirma en la demo.
+- Si están listos, guíalos al formulario de la demo.`,
+    services:[{name:"Demo del producto",price:"Gratis",desc:"30 min con un experto"},{name:"Plan Starter",price:"$299.000/mes",desc:"Hasta 5 usuarios"},{name:"Plan Business",price:"$799.000/mes",desc:"Hasta 20 usuarios"},{name:"Implementación",price:"Cotizar",desc:"Integración personalizada"}],
+    m1:"95",m2:"28%",m3:"21",m1s:"↑ 12% vs mes anterior",m2s:"27 demos agendadas",m3s:"Leads calificados",
+    bars:[{label:"Demo del producto",pct:72},{label:"Plan Business",pct:48},{label:"Plan Starter",pct:40},{label:"Precios",pct:35},{label:"Integración",pct:20}],
+    clients:[{name:"Empresa XYZ",svc:"Demo producto",estado:"Agendado",hora:"10:00am"},{name:"Cía. ABC",svc:"Plan Business",estado:"Pagado",hora:"2:00pm"},{name:"Grupo MNO",svc:"Implementación",estado:"Pendiente",hora:"5:00pm"},{name:"Startup PRQ",svc:"Plan Starter",estado:"Pagado",hora:"9:30am"}],
+    flows:[{label:"Mensajes recibidos",n:95,c:"#1D9E75"},{label:"Interesados en plan",n:60,c:"#0F6E56"},{label:"Solicitaron demo",n:38,c:"#085041"},{label:"Convirtieron",n:27,c:"#04342C"}]
+  }
+};
+
+let currentSector='psico',chatHistory=[],isTyping=false;
+
+function setSector(s,btn){
+  currentSector=s;
+  document.querySelectorAll('.sector-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  updateAll();
+}
+function setTab(t,btn){
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-'+t).classList.add('active');
+}
+function updateAll(){
+  const d=SECTORS[currentSector];
+  document.getElementById('botName').textContent=d.botName;
+  document.getElementById('botStatus').textContent=d.status;
+  document.getElementById('avatarInitials').textContent=d.avatar;
+  ['m1','m2','m3','m1s','m2s','m3s'].forEach(k=>document.getElementById(k).textContent=d[k]);
+  document.getElementById('aboutName').textContent=d.aboutName;
+  document.getElementById('aboutRole').textContent=d.aboutRole;
+  document.getElementById('aboutAvatar').textContent=d.avatar;
+  renderBars();renderFunnel();renderClients();renderServices();resetChat();
+}
+function renderBars(){
+  const d=SECTORS[currentSector];
+  document.getElementById('barChart').innerHTML=d.bars.map(b=>`<div class="bar-row"><div class="bar-label">${b.label}</div><div class="bar-track"><div class="bar-fill" style="width:${b.pct}%"></div></div><div class="bar-pct">${b.pct}%</div></div>`).join('');
+}
+function renderFunnel(){
+  const d=SECTORS[currentSector];
+  const max=d.flows[0].n;
+  document.getElementById('funnelChart').innerHTML=d.flows.map(f=>`<div class="funnel-row"><div class="funnel-label">${f.label}</div><div class="funnel-bar" style="width:${Math.round(f.n/max*100)}%;background:${f.c}">${f.n}</div></div>`).join('');
+}
+function renderClients(){
+  const d=SECTORS[currentSector];
+  const est={Pagado:'badge-green',Agendado:'badge-blue',Pendiente:'badge-amber'};
+  document.getElementById('clientsBody').innerHTML=d.clients.map(c=>`<tr><td>${c.name}</td><td>${c.svc}</td><td><span class="badge ${est[c.estado]||'badge-gray'}">${c.estado}</span></td><td>${c.hora}</td></tr>`).join('');
+}
+function renderServices(){
+  const d=SECTORS[currentSector];
+  document.getElementById('servicesGrid').innerHTML=d.services.map(s=>`<div class="service-card"><div class="service-name">${s.name}</div><div class="service-price">${s.price}</div><div class="service-desc">${s.desc}</div></div>`).join('');
+}
+function addMsg(who,text,isAI=false){
+  const area=document.getElementById('chatArea');
+  const div=document.createElement('div');
+  div.className='msg msg-'+who;
+  if(isAI){const b=document.createElement('div');b.className='msg-ai-badge';b.textContent='✦ IA';div.appendChild(b);}
+  const c=document.createElement('div');
+  c.innerHTML=text.replace(/\*(.*?)\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>');
+  div.appendChild(c);
+  const t=document.createElement('div');t.className='msg-time';
+  const now=new Date();t.textContent=now.getHours()+':'+(now.getMinutes()<10?'0':'')+now.getMinutes();
+  div.appendChild(t);area.appendChild(div);area.scrollTop=area.scrollHeight;
+}
+function showTypingIndicator(){
+  const area=document.getElementById('chatArea');
+  const t=document.createElement('div');t.className='typing';t.id='typingEl';
+  t.innerHTML='<span class="typing-label">IA</span><div class="dot"></div><div class="dot"></div><div class="dot"></div>';
+  area.appendChild(t);area.scrollTop=area.scrollHeight;
+}
+function removeTyping(){const el=document.getElementById('typingEl');if(el)el.remove();}
+function showQuickReplies(opts){
+  document.getElementById('quickReplies').innerHTML=opts.map(o=>`<button class="qr-btn" onclick="handleQR('${o.replace(/'/g,"\\'")}')">${o}</button>`).join('');
+}
+function handleQR(text){sendMessage(text);}
+async function sendUserMsg(){
+  const inp=document.getElementById('userInput');
+  const text=inp.value.trim();
+  if(!text||isTyping)return;
+  inp.value='';sendMessage(text);
+}
+async function sendMessage(text){
+  if(isTyping)return;
+  document.getElementById('quickReplies').innerHTML='';
+  addMsg('user',text);
+  chatHistory.push({role:'user',content:text});
+  isTyping=true;document.getElementById('sendBtn').disabled=true;
+  showTypingIndicator();
+  
+  try {
+    const d = SECTORS[currentSector];
+    
+    // Llamada segura a tu backend de Vercel (la URL relativa hereda tu dominio automáticamente)
+    const response = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chatHistory: chatHistory,
+        systemPrompt: d.systemPrompt
+      })
+    });
+
+    const data = await response.json();
+    removeTyping();
+    
+    let reply = 'Lo siento, hubo un problema. Por favor intenta de nuevo.';
+    if (data.reply) {
+      reply = data.reply;
+    }
+    
+    chatHistory.push({ role: 'assistant', content: reply });
+    addMsg('bot', reply, true);
+    
+    const lower = text.toLowerCase();
+    if (chatHistory.length <= 2) showQuickReplies(d.quickStart);
+    else if (lower.includes('precio') || lower.includes('costo') || lower.includes('cuánto')) showQuickReplies(['Quiero agendar', '¿Cómo pago?', 'Más información']);
+    else if (lower.includes('agendar') || lower.includes('cita') || lower.includes('reservar') || lower.includes('demo')) showQuickReplies(['¿Cómo es el proceso?', 'Quiero agendar ahora', 'Tengo más preguntas']);
+    
+  } catch (e) {
+    removeTyping();
+    addMsg('bot', 'Hubo un error al conectar con la IA. Recarga la página e intenta de nuevo.', false);
+    console.error(e);
+  }
+  isTyping=false;document.getElementById('sendBtn').disabled=false;
+  document.getElementById('userInput').focus();
+}
+function resetChat(){
+  document.getElementById('chatArea').innerHTML='';
+  document.getElementById('quickReplies').innerHTML='';
+  chatHistory=[];
+  const d=SECTORS[currentSector];
+  setTimeout(()=>{addMsg('bot',d.welcomeMsg,false);setTimeout(()=>showQuickReplies(d.quickStart),400);},300);
+}
+updateAll();
+</script>
+</body>
+</html>
